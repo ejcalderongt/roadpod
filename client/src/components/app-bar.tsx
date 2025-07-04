@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
 import { useAuth } from "@/contexts/auth-context";
@@ -25,7 +25,7 @@ export function AppBar({
   className = "bg-primary",
   actions,
 }: AppBarProps) {
-  const navigate = useNavigate(); // <-- aquí el cambio
+  const [, navigate] = useLocation();
   const { toggleTheme } = useTheme();
   const { user, routeInfo, logout } = useAuth();
 

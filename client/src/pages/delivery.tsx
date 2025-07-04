@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useParams, useLocation } from "react-router-dom";
+import { useRoute, useLocation } from "wouter";
 import { StatusBar } from "@/components/status-bar";
 import { AppBar } from "@/components/app-bar";
 import { BottomNavigation } from "@/components/bottom-navigation";
@@ -36,7 +36,8 @@ interface DeliveryOrder {
 }
 
 export function Delivery() {
-  const { id } = useParams<{ id: string }>();
+  const [match, params] = useRoute("/delivery/:id");
+  const id = match ? params?.id : null;
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [deliveryStep, setDeliveryStep] = useState("products");

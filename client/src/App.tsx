@@ -10,10 +10,7 @@ import { Login } from "@/pages/login";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 
-import {
-  Routes,
-  Route,
-} from "react-router-dom";
+import { Route, Switch } from "wouter";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -40,15 +37,15 @@ function AppContent() {
 
   return (
     <div className="app-screen bg-background text-foreground">
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/orders" element={<Orders />} />
-        <Route path="/orders/:id" element={<OrderDetail />} />
-        <Route path="/delivery/:id" element={<Delivery />} />
-        <Route path="/route" element={<RouteMap />} />
-        <Route path="/inventory" element={<Inventory />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/orders" component={Orders} />
+        <Route path="/orders/:id" component={OrderDetail} />
+        <Route path="/delivery/:id" component={Delivery} />
+        <Route path="/route" component={RouteMap} />
+        <Route path="/inventory" component={Inventory} />
+        <Route component={NotFound} />
+      </Switch>
     </div>
   );
 }

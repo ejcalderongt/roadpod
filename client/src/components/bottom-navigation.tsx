@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
+import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 
 interface BottomNavigationProps {
@@ -6,12 +6,12 @@ interface BottomNavigationProps {
 }
 
 export function BottomNavigation({ activeTab }: BottomNavigationProps) {
-  const location = useLocation();
+  const [location] = useLocation();
 
   const getActiveTab = () => {
     if (activeTab) return activeTab;
 
-    const path = location.pathname;
+    const path = location;
     if (path === "/" || path === "/dashboard") return "dashboard";
     if (path.startsWith("/orders")) return "orders";
     if (path.startsWith("/route")) return "route";

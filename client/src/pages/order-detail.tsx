@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useRoute, Link, useLocation } from "wouter";
 import { StatusBar } from "@/components/status-bar";
 import { AppBar } from "@/components/app-bar";
 import { BottomNavigation } from "@/components/bottom-navigation";
@@ -36,8 +36,9 @@ interface OrderDetail {
 }
 
 export function OrderDetail() {
-  const { id } = useParams<{ id: string }>();
-  const [, navigate] = useLocation(); // ✅ corrección aplicada
+  const [match, params] = useRoute("/orders/:id");
+  const id = match ? params?.id : null;
+  const [, navigate] = useLocation();
   const { toast } = useToast();
 
   const { data: order, isLoading } = useQuery<OrderDetail>({

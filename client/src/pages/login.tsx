@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,7 +42,7 @@ export function Login() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [, setLocation] = useLocation();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const { login, setRouteInfo } = useAuth();
 
@@ -94,7 +94,7 @@ export function Login() {
         description: `Bienvenido ${user.name}`,
       });
 
-      setLocation("/");
+      navigate("/");
 
     } catch (error) {
       toast({
