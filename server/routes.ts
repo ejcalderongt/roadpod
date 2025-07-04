@@ -2,10 +2,68 @@ import express from "express";
 import { storage } from "./storage";
 import { 
   insertOrderSchema, insertCustomerSchema, insertProductSchema, 
-  insertInventorySchema, insertRouteSchema, insertOrderItemSchema
+  insertInventorySchema, insertRouteSchema, insertOrderItemSchema,
+  insertRouteSessionSchema, insertDailyReportSchema
 } from "@shared/schema";
 
 const router = express.Router();
+
+// Authentication routes
+router.post("/api/auth/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ error: "Username and password are required" });
+    }
+    
+    const user = await storage.getUserByUsername(username);
+    if (!user || user.password !== password) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+    
+    // Simple session - store user ID in session
+    req.session = req.session || {};
+    req.session.userId = user.id;
+    
+    const userWithoutPassword = { ...user };
+    delete userWithoutPassword.password;
+    
+    res.json({ user: userWithoutPassword });
+  } catch (error) {
+    res.status(500).json({ error: "Login failed" });
+  }
+});
+
+router.post("/api/auth/logout", async (req, res) => {
+  try {
+    req.session = null;
+    res.json({ message: "Logged out successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Logout failed" });
+  }
+});
+
+router.get("/api/auth/me", async (req, res) => {
+  try {
+    const userId = req.session?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    const userWithoutPassword = { ...user };
+    delete userWithoutPassword.password;
+    
+    res.json({ user: userWithoutPassword });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to get user info" });
+  }
+});
 
 // Orders routes
 router.get("/api/orders", async (req, res) => {
@@ -282,15 +340,109 @@ router.post("/api/delivery/complete", async (req, res) => {
 
 router.post("/api/delivery/not-delivered", async (req, res) => {
   try {
-    const { orderId, reason } = req.body;
+    const { orderId, reason, gpsLatitude, gpsLongitude } = req.body;
     
     const order = await storage.updateOrder(orderId, {
       status: "not_delivered",
       nonDeliveryReason: reason,
+      gpsLatitude,
+      gpsLongitude,
     });
     res.json(order);
   } catch (error) {
     res.status(400).json({ error: "Failed to mark as not delivered" });
+  }
+});
+
+// Route Sessions routes
+router.get("/api/route-sessions", async (req, res) => {
+  try {
+    const driverId = req.query.driverId;
+    
+    if (!driverId) {
+      return res.status(400).json({ error: "Driver ID is required" });
+    }
+    
+    const sessions = await storage.getRouteSessions(parseInt(driverId as string));
+    res.json(sessions);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch route sessions" });
+  }
+});
+
+router.post("/api/route-sessions/start", async (req, res) => {
+  try {
+    const sessionData = insertRouteSessionSchema.parse(req.body);
+    const session = await storage.createRouteSession({
+      ...sessionData,
+      startedAt: new Date(),
+      status: "active",
+    });
+    res.status(201).json(session);
+  } catch (error) {
+    res.status(400).json({ error: "Failed to start route session" });
+  }
+});
+
+router.post("/api/route-sessions/end", async (req, res) => {
+  try {
+    const { sessionId, endMileage, inventoryReturned } = req.body;
+    
+    // End the session
+    const session = await storage.updateRouteSession(sessionId, {
+      endMileage,
+      completedAt: new Date(),
+      status: "completed",
+    });
+
+    // Create daily report
+    const report = await storage.createDailyReport({
+      sessionId,
+      driverId: session.driverId,
+      date: new Date(),
+      inventoryReturned: inventoryReturned || [],
+    });
+
+    res.json({ session, report });
+  } catch (error) {
+    res.status(400).json({ error: "Failed to end route session" });
+  }
+});
+
+// GPS capture for orders
+router.post("/api/delivery/capture-gps", async (req, res) => {
+  try {
+    const { orderId, latitude, longitude } = req.body;
+    
+    const order = await storage.updateOrder(orderId, {
+      gpsLatitude: latitude.toString(),
+      gpsLongitude: longitude.toString(),
+    });
+    
+    res.json(order);
+  } catch (error) {
+    res.status(400).json({ error: "Failed to capture GPS coordinates" });
+  }
+});
+
+// Daily Reports routes
+router.get("/api/daily-reports", async (req, res) => {
+  try {
+    const driverId = req.query.driverId;
+    const date = req.query.date;
+    
+    if (!driverId) {
+      return res.status(400).json({ error: "Driver ID is required" });
+    }
+    
+    const reports = await storage.getDailyReports(
+      parseInt(driverId as string),
+      date ? new Date(date as string) : undefined
+    );
+    
+    res.json(reports);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch daily reports" });
   }
 });
 

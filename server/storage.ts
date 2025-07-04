@@ -1,13 +1,15 @@
 import { db } from "./db";
 import { 
-  users, customers, products, orders, orderItems, inventory, routes,
+  users, customers, products, orders, orderItems, inventory, routes, routeSessions, dailyReports,
   type User, type InsertUser,
   type Customer, type InsertCustomer,
   type Product, type InsertProduct,
   type Order, type InsertOrder,
   type OrderItem, type InsertOrderItem,
   type Inventory, type InsertInventory,
-  type Route, type InsertRoute
+  type Route, type InsertRoute,
+  type RouteSession, type InsertRouteSession,
+  type DailyReport, type InsertDailyReport
 } from "@shared/schema";
 import { eq, and, desc, sql, gte, lte } from "drizzle-orm";
 
@@ -47,6 +49,15 @@ export interface IStorage {
   getRoute(id: number): Promise<Route | undefined>;
   createRoute(insertRoute: InsertRoute): Promise<Route>;
   updateRoute(id: number, updates: Partial<Route>): Promise<Route>;
+  
+  // Route Sessions
+  getRouteSessions(driverId: number): Promise<RouteSession[]>;
+  createRouteSession(insertRouteSession: InsertRouteSession): Promise<RouteSession>;
+  updateRouteSession(id: number, updates: Partial<RouteSession>): Promise<RouteSession>;
+  
+  // Daily Reports
+  getDailyReports(driverId: number, date?: Date): Promise<DailyReport[]>;
+  createDailyReport(insertDailyReport: InsertDailyReport): Promise<DailyReport>;
   
   // Statistics
   getOrderStatistics(driverId: number, date?: Date): Promise<{
@@ -267,6 +278,54 @@ export class DatabaseStorage implements IStorage {
       notDelivered: Number(stats.notDelivered || 0),
       totalInventory: Number(inventoryCount.totalInventory || 0),
     };
+  }
+
+  // Route Sessions methods
+  async getRouteSessions(driverId: number): Promise<RouteSession[]> {
+    return await db.select()
+      .from(routeSessions)
+      .where(eq(routeSessions.driverId, driverId))
+      .orderBy(desc(routeSessions.createdAt));
+  }
+
+  async createRouteSession(insertRouteSession: InsertRouteSession): Promise<RouteSession> {
+    const [session] = await db.insert(routeSessions).values(insertRouteSession).returning();
+    return session;
+  }
+
+  async updateRouteSession(id: number, updates: Partial<RouteSession>): Promise<RouteSession> {
+    const [session] = await db.update(routeSessions)
+      .set(updates)
+      .where(eq(routeSessions.id, id))
+      .returning();
+    return session;
+  }
+
+  // Daily Reports methods
+  async getDailyReports(driverId: number, date?: Date): Promise<DailyReport[]> {
+    let query = db.select().from(dailyReports).where(eq(dailyReports.driverId, driverId));
+    
+    if (date) {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      query = query.where(
+        and(
+          eq(dailyReports.driverId, driverId),
+          gte(dailyReports.date, startOfDay),
+          lte(dailyReports.date, endOfDay)
+        )
+      );
+    }
+    
+    return await query.orderBy(desc(dailyReports.createdAt));
+  }
+
+  async createDailyReport(insertDailyReport: InsertDailyReport): Promise<DailyReport> {
+    const [report] = await db.insert(dailyReports).values(insertDailyReport).returning();
+    return report;
   }
 }
 

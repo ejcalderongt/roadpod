@@ -1,12 +1,13 @@
 import { db } from "./db";
-import { users, customers, products, orders, orderItems, inventory, routes } from "@shared/schema";
+import { users, customers, products, orders, orderItems, inventory, routes, routeSessions, dailyReports } from "@shared/schema";
 
 async function seedDatabase() {
   console.log("Seeding database...");
 
-  // Create a test driver
+  // Create a test driver - username: 1, password: 1
   const [driver] = await db.insert(users).values({
-    username: "driver1",
+    username: "1",
+    password: "1", // Simple password for demo
     email: "driver@deliveryroute.com",
     name: "Juan Pérez",
     role: "driver",
@@ -58,6 +59,7 @@ async function seedDatabase() {
   const productData = [
     {
       code: "ACE001",
+      wmsProductCode: "WMS-ACE-001",
       name: "Aceite de Cocina Premium 1L",
       description: "Aceite de girasol refinado de alta calidad",
       category: "aceites",
@@ -66,6 +68,7 @@ async function seedDatabase() {
     },
     {
       code: "ARR002",
+      wmsProductCode: "WMS-ARR-002",
       name: "Arroz Diana 500g",
       description: "Arroz blanco de grano largo",
       category: "granos",
@@ -74,6 +77,7 @@ async function seedDatabase() {
     },
     {
       code: "SAL003",
+      wmsProductCode: "WMS-SAL-003",
       name: "Sal Refisal 500g",
       description: "Sal de mesa refinada yodada",
       category: "condimentos",
@@ -82,6 +86,7 @@ async function seedDatabase() {
     },
     {
       code: "AZU004",
+      wmsProductCode: "WMS-AZU-004",
       name: "Azúcar Manuelita 1kg",
       description: "Azúcar blanca refinada",
       category: "condimentos",
@@ -90,6 +95,7 @@ async function seedDatabase() {
     },
     {
       code: "FRI005",
+      wmsProductCode: "WMS-FRI-005",
       name: "Fríjol Rojo 500g",
       description: "Fríjol rojo seco de primera calidad",
       category: "granos",
@@ -121,6 +127,7 @@ async function seedDatabase() {
 
     const order = {
       orderNumber: `ORD-${String(i + 1).padStart(3, '0')}`,
+      wmsOrderCode: `WMS-ORD-${String(i + 1).padStart(3, '0')}`,
       customerId: customer.id,
       driverId: driver.id,
       status: i < 2 ? "pending" : i < 4 ? "delivered" : "not_delivered",
@@ -165,20 +172,52 @@ async function seedDatabase() {
       .where(eq(orders.id, order.id));
   }
 
-  // Create a route
-  await db.insert(routes).values({
-    driverId: driver.id,
-    name: "Ruta Norte - Zona Comercial",
-    date: today,
-    status: "active",
-    totalDistance: "12.5",
-    estimatedTime: 240, // 4 hours
-    waypoints: [
-      { lat: 4.6097102, lng: -74.0817500, orderId: insertedOrders[0].id },
-      { lat: 4.6112745, lng: -74.0807398, orderId: insertedOrders[1].id },
-      { lat: 4.6127846, lng: -74.0798765, orderId: insertedOrders[2].id },
-    ],
-  });
+  // Create routes
+  const routeData = [
+    {
+      driverId: driver.id,
+      name: "Ruta Norte - Zona Comercial",
+      date: today,
+      status: "active",
+      totalDistance: "12.5",
+      estimatedTime: 240, // 4 hours
+      waypoints: [
+        { lat: 4.6097102, lng: -74.0817500, orderId: insertedOrders[0]?.id },
+        { lat: 4.6112745, lng: -74.0807398, orderId: insertedOrders[1]?.id },
+        { lat: 4.6127846, lng: -74.0798765, orderId: insertedOrders[2]?.id },
+      ],
+    },
+    {
+      driverId: driver.id,
+      name: "Ruta Sur - Zona Industrial",
+      date: new Date(today.getTime() + 24 * 60 * 60 * 1000), // Tomorrow
+      status: "completed",
+      totalDistance: "18.3",
+      estimatedTime: 300, // 5 hours
+      actualTime: 285,
+      waypoints: [
+        { lat: 4.5897102, lng: -74.0917500 },
+        { lat: 4.5812745, lng: -74.0907398 },
+      ],
+    },
+  ];
+
+  const insertedRoutes = await db.insert(routes).values(routeData).returning();
+
+  // Create route session for current active route
+  const activeRoute = insertedRoutes.find(r => r.status === "active");
+  if (activeRoute) {
+    const [session] = await db.insert(routeSessions).values({
+      routeId: activeRoute.id,
+      driverId: driver.id,
+      assistantName: "María González",
+      startMileage: "12450.5",
+      status: "active",
+      startedAt: new Date(),
+    }).returning();
+
+    console.log(`Created active route session for: ${activeRoute.name}`);
+  }
 
   console.log("Database seeded successfully!");
   console.log(`Created ${insertedCustomers.length} customers`);
