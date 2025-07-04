@@ -220,10 +220,20 @@ export function Inventory() {
                       </div>
                       <div className="flex-1">
                         <h4 className="font-medium">{item.product.name}</h4>
-                        <p className="text-muted-foreground text-sm">{item.product.code}</p>
+                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                          <span>Código: {item.product.code}</span>
+                          {item.product.wmsProductCode && (
+                            <span className="px-2 py-1 bg-primary/10 text-primary rounded text-xs">
+                              WMS: {item.product.wmsProductCode}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center space-x-3 text-xs text-muted-foreground mt-1">
                           <span>Precio: {formatCurrency(item.product.price)}</span>
                           <span>Categoría: {item.product.category || "General"}</span>
+                          {item.reservedQuantity > 0 && (
+                            <span className="text-warning">Reservado: {item.reservedQuantity}</span>
+                          )}
                         </div>
                       </div>
                       <div className="text-right">

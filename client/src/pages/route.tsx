@@ -86,18 +86,64 @@ export function RouteMap() {
         }
       />
 
-      {/* Map Container */}
+      {/* Enhanced Map Container */}
       <div className="relative">
-        <div className="h-96 bg-gradient-to-br from-blue-100 to-green-100 dark:from-muted dark:to-muted/50 relative overflow-hidden">
-          {/* Map Pin Markers */}
-          <div className="absolute top-16 left-12 w-6 h-6 bg-success rounded-full border-2 border-background shadow-lg flex items-center justify-center">
-            <span className="text-xs text-success-foreground font-bold">1</span>
+        <div className="h-96 bg-gradient-to-br from-blue-50 via-green-50 to-blue-100 dark:from-slate-800 dark:via-slate-700 dark:to-slate-600 relative overflow-hidden border-b">
+          {/* Street Grid Background */}
+          <div className="absolute inset-0 opacity-20">
+            <div className="grid grid-cols-8 grid-rows-6 h-full w-full">
+              {Array.from({ length: 48 }).map((_, i) => (
+                <div key={i} className="border border-slate-300 dark:border-slate-600"></div>
+              ))}
+            </div>
           </div>
-          <div className="absolute top-32 right-20 w-6 h-6 bg-warning rounded-full border-2 border-background shadow-lg flex items-center justify-center">
-            <span className="text-xs text-warning-foreground font-bold">2</span>
+          
+          {/* Current Driver Location */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <div className="w-8 h-8 bg-primary rounded-full border-4 border-white shadow-lg flex items-center justify-center relative">
+              <div className="w-4 h-4 bg-white rounded-full"></div>
+              <div className="absolute inset-0 rounded-full animate-ping bg-primary opacity-75"></div>
+            </div>
+            <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs font-medium bg-white dark:bg-slate-800 px-2 py-1 rounded shadow">
+              Tú
+            </div>
           </div>
-          <div className="absolute bottom-20 left-20 w-6 h-6 bg-error rounded-full border-2 border-background shadow-lg flex items-center justify-center">
-            <span className="text-xs text-error-foreground font-bold">3</span>
+          
+          {/* Enhanced Map Pin Markers */}
+          <div className="absolute top-16 left-12 group cursor-pointer">
+            <div className="w-8 h-8 bg-success rounded-full border-3 border-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform">
+              <span className="text-xs text-white font-bold">1</span>
+            </div>
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-success text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+              Tienda El Progreso
+            </div>
+          </div>
+          
+          <div className="absolute top-32 right-20 group cursor-pointer">
+            <div className="w-8 h-8 bg-warning rounded-full border-3 border-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform">
+              <span className="text-xs text-white font-bold">2</span>
+            </div>
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-warning text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+              Supermercado La Esquina
+            </div>
+          </div>
+          
+          <div className="absolute bottom-20 left-20 group cursor-pointer">
+            <div className="w-8 h-8 bg-muted-foreground rounded-full border-3 border-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform">
+              <span className="text-xs text-white font-bold">3</span>
+            </div>
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-muted-foreground text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+              Abarrotes Don Luis
+            </div>
+          </div>
+          
+          <div className="absolute top-24 left-1/2 group cursor-pointer">
+            <div className="w-8 h-8 bg-blue-500 rounded-full border-3 border-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform">
+              <span className="text-xs text-white font-bold">4</span>
+            </div>
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+              Minimarket Central
+            </div>
           </div>
           <div className="absolute bottom-32 right-16 w-6 h-6 bg-muted rounded-full border-2 border-background shadow-lg flex items-center justify-center">
             <span className="text-xs text-muted-foreground font-bold">4</span>

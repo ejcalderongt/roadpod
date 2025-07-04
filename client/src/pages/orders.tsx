@@ -152,6 +152,9 @@ export function Orders() {
                     <div>
                       <p className="text-muted-foreground">Pedido #</p>
                       <p className="font-medium">{order.orderNumber}</p>
+                      {order.wmsOrderCode && (
+                        <p className="text-xs text-primary">WMS: {order.wmsOrderCode}</p>
+                      )}
                     </div>
                     <div>
                       <p className="text-muted-foreground">Valor Total</p>

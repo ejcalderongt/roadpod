@@ -5,6 +5,7 @@ import { OrderDetail } from "@/pages/order-detail";
 import { Delivery } from "@/pages/delivery";
 import { RouteMap } from "@/pages/route";
 import { Inventory } from "@/pages/inventory";
+import { Profile } from "@/pages/profile";
 import { NotFound } from "@/pages/not-found";
 import { Login } from "@/pages/login";
 import { Toaster } from "@/components/ui/toaster";
@@ -44,6 +45,7 @@ function AppContent() {
         <Route path="/delivery/:id" component={Delivery} />
         <Route path="/route" component={RouteMap} />
         <Route path="/inventory" component={Inventory} />
+        <Route path="/profile" component={Profile} />
         <Route component={NotFound} />
       </Switch>
     </div>

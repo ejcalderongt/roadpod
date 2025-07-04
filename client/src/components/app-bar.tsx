@@ -118,9 +118,13 @@ export function AppBar({
             >
               <span className="material-icons">sync</span>
             </Button>
-            <div className="w-8 h-8 bg-primary-foreground/30 rounded-full flex items-center justify-center">
-              <span className="text-primary text-sm font-medium">JD</span>
-            </div>
+            <Link href="/profile">
+              <div className="w-8 h-8 bg-primary-foreground/30 rounded-full flex items-center justify-center cursor-pointer hover:bg-primary-foreground/40 transition-colors">
+                <span className="text-primary text-sm font-medium">
+                  {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'JD'}
+                </span>
+              </div>
+            </Link>
           </div>
         )}
 

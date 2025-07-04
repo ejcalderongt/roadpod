@@ -360,21 +360,71 @@ router.post("/api/route-sessions/start", async (req, res) => {
 
 router.post("/api/route-sessions/end", async (req, res) => {
   try {
-    const { sessionId, endMileage, inventoryReturned } = req.body;
-    const session = await storage.updateRouteSession(sessionId, {
+    const { driverId, endMileage, observations, returnItems } = req.body;
+    
+    // Find active session for the driver
+    const sessions = await storage.getRouteSessions(driverId);
+    const activeSession = sessions.find(s => s.status === "active");
+    
+    if (!activeSession) {
+      return res.status(400).json({ error: "No active session found" });
+    }
+
+    const session = await storage.updateRouteSession(activeSession.id, {
       endMileage,
       completedAt: new Date(),
       status: "completed",
     });
+    
     const report = await storage.createDailyReport({
-      sessionId,
-      driverId: session.driverId,
+      sessionId: activeSession.id,
+      driverId: driverId,
       date: new Date(),
-      inventoryReturned: inventoryReturned || [],
+      inventoryReturned: returnItems || [],
+      observations: observations || "",
     });
+    
     res.json({ session, report });
   } catch {
     res.status(400).json({ error: "Failed to end route session" });
+  }
+});
+
+// Route Statistics endpoint
+router.get("/api/route-stats", async (req, res) => {
+  try {
+    const { driverId } = req.query;
+    if (!driverId) return res.status(400).json({ error: "Driver ID is required" });
+    
+    const driverIdNum = parseInt(driverId as string);
+    const sessions = await storage.getRouteSessions(driverIdNum);
+    const activeSession = sessions.find(s => s.status === "active");
+    
+    if (!activeSession) {
+      return res.json({
+        totalDeliveries: 0,
+        completedDeliveries: 0,
+        pendingDeliveries: 0,
+        totalDistance: 0,
+        averageDeliveryTime: 0,
+        startTime: null,
+        endTime: null,
+      });
+    }
+
+    const stats = await storage.getOrderStatistics(driverIdNum);
+    
+    res.json({
+      totalDeliveries: stats.delivered + stats.pending + stats.notDelivered,
+      completedDeliveries: stats.delivered,
+      pendingDeliveries: stats.pending,
+      totalDistance: 0, // Could be calculated from routes
+      averageDeliveryTime: 15, // Mock data for now
+      startTime: activeSession.startedAt,
+      endTime: activeSession.completedAt,
+    });
+  } catch {
+    res.status(500).json({ error: "Failed to fetch route statistics" });
   }
 });
 

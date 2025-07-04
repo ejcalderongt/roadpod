@@ -65,19 +65,51 @@ export function Login() {
         throw new Error("Credenciales inválidas");
       }
 
+      // Check if user has active session
+      const sessionsResponse = await apiRequest(`/api/route-sessions?driverId=${user.id}`);
+      const activeSessions = sessionsResponse.filter((s: any) => s.status === "active");
+      const hasActiveSession = activeSessions.length > 0;
+
+      // If no active session, require route information
+      if (!hasActiveSession && (!formData.routeId || !formData.startMileage)) {
+        throw new Error("Para el primer inicio de sesión del día, se requiere información de ruta y kilometraje inicial");
+      }
+
       // Actualizar el estado global de autenticación
       login(user);
 
-      // Registrar información de la ruta
-      setRouteInfo({
-        routeId: formData.routeId,
-        routeName: availableRoutes.find(r => r.id === formData.routeId)?.name || "",
-        assistantName: formData.assistantName,
-        startMileage: formData.startMileage,
-      });
+      // Registrar información de la ruta solo si es nueva sesión
+      if (!hasActiveSession) {
+        setRouteInfo({
+          routeId: formData.routeId,
+          routeName: availableRoutes.find(r => r.id === formData.routeId)?.name || "",
+          assistantName: formData.assistantName,
+          startMileage: formData.startMileage,
+        });
 
-      // Llamar al backend para iniciar sesión de ruta (opcional)
-      if (formData.routeId && formData.startMileage) {
+        // Crear nueva sesión de ruta
+        await apiRequest("/api/route-sessions/start", {
+          method: "POST",
+          body: JSON.stringify({
+            routeId: parseInt(formData.routeId),
+            driverId: user.id,
+            assistantName: formData.assistantName,
+            startMileage: formData.startMileage,
+          }),
+        });
+      } else {
+        // Usar información de sesión activa
+        const activeSession = activeSessions[0];
+        setRouteInfo({
+          routeId: activeSession.routeId.toString(),
+          routeName: activeSession.route?.name || `Ruta ${activeSession.routeId}`,
+          assistantName: activeSession.assistantName || "",
+          startMileage: activeSession.startMileage || "",
+        });
+      }
+
+      // Llamar al backend para iniciar sesión de ruta solo en primera sesión
+      if (!hasActiveSession && formData.routeId && formData.startMileage) {
         await apiRequest("/api/route-sessions/start", {
           method: "POST",
           body: JSON.stringify({
