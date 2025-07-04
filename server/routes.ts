@@ -11,6 +11,7 @@ const router = express.Router();
 // Authentication routes
 router.post("/api/auth/login", async (req, res) => {
   try {
+    
     const { username, password } = req.body;
     
     if (!username || !password) {
