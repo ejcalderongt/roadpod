@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MapPin, User, Clock, Truck } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/auth-context";
 
 interface LoginFormData {
   username: string;
@@ -17,7 +18,6 @@ interface LoginFormData {
   startMileage: string;
 }
 
-// Mock data for demo - in real app this would come from API
 const availableRoutes = [
   { id: "1", name: "Ruta Norte - Zona Comercial", area: "Norte" },
   { id: "2", name: "Ruta Sur - Zona Industrial", area: "Sur" },
@@ -26,10 +26,10 @@ const availableRoutes = [
 
 const assistants = [
   "María González",
-  "Carlos Rodríguez", 
+  "Carlos Rodríguez",
   "Ana López",
   "Luis Hernández",
-  "Sin ayudante"
+  "Sin ayudante",
 ];
 
 export function Login() {
@@ -40,17 +40,18 @@ export function Login() {
     assistantName: "",
     startMileage: "",
   });
+
   const [isLoading, setIsLoading] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { login, setRouteInfo } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Login user
-      const loginResponse = await apiRequest("/api/auth/login", {
+      const response = await apiRequest("/api/auth/login", {
         method: "POST",
         body: JSON.stringify({
           username: formData.username,
@@ -58,13 +59,24 @@ export function Login() {
         }),
       });
 
-      if (!loginResponse.ok) {
+      const { user } = response;
+
+      if (!user) {
         throw new Error("Credenciales inválidas");
       }
 
-      const { user } = await loginResponse.json();
+      // Actualizar el estado global de autenticación
+      login(user);
 
-      // Start route session
+      // Registrar información de la ruta
+      setRouteInfo({
+        routeId: formData.routeId,
+        routeName: availableRoutes.find(r => r.id === formData.routeId)?.name || "",
+        assistantName: formData.assistantName,
+        startMileage: formData.startMileage,
+      });
+
+      // Llamar al backend para iniciar sesión de ruta (opcional)
       if (formData.routeId && formData.startMileage) {
         await apiRequest("/api/route-sessions/start", {
           method: "POST",
@@ -77,18 +89,13 @@ export function Login() {
         });
       }
 
-      // Store session data in localStorage
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("routeId", formData.routeId);
-      localStorage.setItem("assistantName", formData.assistantName);
-      localStorage.setItem("startMileage", formData.startMileage);
-
       toast({
         title: "Sesión iniciada",
         description: `Bienvenido ${user.name}`,
       });
 
       setLocation("/");
+
     } catch (error) {
       toast({
         title: "Error de inicio de sesión",
@@ -114,21 +121,15 @@ export function Login() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Login Credentials */}
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-sm font-medium">
-                Usuario
-              </Label>
+              <Label htmlFor="username">Usuario</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   id="username"
-                  type="text"
-                  placeholder="Ingrese su usuario"
                   value={formData.username}
-                  onChange={(e) =>
-                    setFormData({ ...formData, username: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  placeholder="Ingrese su usuario"
                   className="pl-10"
                   required
                 />
@@ -136,38 +137,28 @@ export function Login() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">
-                Contraseña
-              </Label>
+              <Label htmlFor="password">Contraseña</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Ingrese su contraseña"
                 value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="Ingrese su contraseña"
                 required
               />
             </div>
 
-            {/* Route Selection */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">
-                <MapPin className="inline w-4 h-4 mr-1" />
-                Seleccionar Ruta
-              </Label>
+              <Label><MapPin className="inline w-4 h-4 mr-1" />Seleccionar Ruta</Label>
               <Select
                 value={formData.routeId}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, routeId: value })
-                }
+                onValueChange={(value) => setFormData({ ...formData, routeId: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccione una ruta" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableRoutes.map((route) => (
+                  {availableRoutes.map(route => (
                     <SelectItem key={route.id} value={route.id}>
                       {route.name}
                     </SelectItem>
@@ -176,62 +167,42 @@ export function Login() {
               </Select>
             </div>
 
-            {/* Assistant Selection */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">
-                <User className="inline w-4 h-4 mr-1" />
-                Ayudante de Ruta
-              </Label>
+              <Label><User className="inline w-4 h-4 mr-1" />Ayudante de Ruta</Label>
               <Select
                 value={formData.assistantName}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, assistantName: value })
-                }
+                onValueChange={(value) => setFormData({ ...formData, assistantName: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccione un ayudante" />
                 </SelectTrigger>
                 <SelectContent>
-                  {assistants.map((assistant) => (
-                    <SelectItem key={assistant} value={assistant}>
-                      {assistant}
-                    </SelectItem>
+                  {assistants.map(a => (
+                    <SelectItem key={a} value={a}>{a}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Start Mileage */}
             <div className="space-y-2">
-              <Label htmlFor="startMileage" className="text-sm font-medium">
-                <Clock className="inline w-4 h-4 mr-1" />
-                Kilometraje Inicial
-              </Label>
+              <Label htmlFor="startMileage"><Clock className="inline w-4 h-4 mr-1" />Kilometraje Inicial</Label>
               <Input
                 id="startMileage"
                 type="number"
                 step="0.1"
                 placeholder="Ej: 12450.5"
                 value={formData.startMileage}
-                onChange={(e) =>
-                  setFormData({ ...formData, startMileage: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, startMileage: e.target.value })}
               />
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
             </Button>
           </form>
 
-          <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-              <strong>Demo:</strong> Usuario: 1, Contraseña: 1
-            </p>
+          <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-center text-sm text-gray-600 dark:text-gray-400">
+            <strong>Demo:</strong> Usuario: 1, Contraseña: 1
           </div>
         </CardContent>
       </Card>

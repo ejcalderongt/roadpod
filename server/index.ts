@@ -4,23 +4,21 @@ import session from "express-session";
 import http from "http";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { db } from "./db";
+import * as schema from "@shared/schema";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Middleware de sesión
-app.use(session({
-  secret: "clave_secreta_segura_123",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false,
-    maxAge: 24 * 60 * 60 * 1000
-  }
-}));
+app.use(
+  session({
+    secret: "supersecret", // idealmente usar process.env.SESSION_SECRET
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
-// Logging detallado
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -57,7 +55,10 @@ app.use((req, res, next) => {
 
   await registerRoutes(app);
 
-  // Manejo de errores
+  db.select().from(schema.users).limit(1)
+    .then(result => console.log("✔ Conexión a base de datos exitosa:", result))
+    .catch(error => console.error("❌ Error al conectar a DB:", error));
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";

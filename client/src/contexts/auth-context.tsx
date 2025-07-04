@@ -22,7 +22,7 @@ interface AuthContextType {
   user: User | null;
   routeInfo: RouteInfo | null;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (user: User) => void;
   logout: () => Promise<void>;
   setRouteInfo: (info: RouteInfo) => void;
 }
@@ -31,7 +31,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
@@ -47,7 +47,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored authentication data
     const storedUser = localStorage.getItem("user");
     const storedRouteId = localStorage.getItem("routeId");
     const storedRouteName = localStorage.getItem("routeName");
@@ -57,7 +56,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
-      } catch (error) {
+      } catch {
         localStorage.removeItem("user");
       }
     }
@@ -74,17 +73,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsLoading(false);
   }, []);
 
-  const login = async (username: string, password: string) => {
-    const response = await apiRequest("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ username, password }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Invalid credentials");
-    }
-
-    const { user } = await response.json();
+  const login = (user: User) => {
     setUser(user);
     localStorage.setItem("user", JSON.stringify(user));
   };
@@ -96,11 +85,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     setUser(null);
     setRouteInfoState(null);
-    localStorage.removeItem("user");
-    localStorage.removeItem("routeId");
-    localStorage.removeItem("routeName");
-    localStorage.removeItem("assistantName");
-    localStorage.removeItem("startMileage");
+    localStorage.clear();
   };
 
   const setRouteInfo = (info: RouteInfo) => {

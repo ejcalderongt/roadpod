@@ -1,9 +1,4 @@
-import { Route, Switch } from "wouter";
-import { ThemeProvider } from "@/components/theme-provider";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider, useAuth } from "@/contexts/auth-context";
-import { Login } from "@/pages/login";
+import { useAuth } from "@/contexts/auth-context";
 import { Dashboard } from "@/pages/dashboard";
 import { Orders } from "@/pages/orders";
 import { OrderDetail } from "@/pages/order-detail";
@@ -11,19 +6,19 @@ import { Delivery } from "@/pages/delivery";
 import { RouteMap } from "@/pages/route";
 import { Inventory } from "@/pages/inventory";
 import { NotFound } from "@/pages/not-found";
+import { Login } from "@/pages/login";
+import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "@/components/theme-provider";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
-      retry: (failureCount, error: any) => {
-        if (error?.status === 404) return false;
-        return failureCount < 3;
-      },
-    },
-  },
-});
+import {
+  Routes,
+  Route,
+} from "react-router-dom";
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// Crear instancia de QueryClient
+const queryClient = new QueryClient();
 
 function AppContent() {
   const { user, isLoading } = useAuth();
@@ -45,15 +40,15 @@ function AppContent() {
 
   return (
     <div className="app-screen bg-background text-foreground">
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/orders" component={Orders} />
-        <Route path="/orders/:id" component={OrderDetail} />
-        <Route path="/delivery/:id" component={Delivery} />
-        <Route path="/route" component={RouteMap} />
-        <Route path="/inventory" component={Inventory} />
-        <Route component={NotFound} />
-      </Switch>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/orders" element={<Orders />} />
+        <Route path="/orders/:id" element={<OrderDetail />} />
+        <Route path="/delivery/:id" element={<Delivery />} />
+        <Route path="/route" element={<RouteMap />} />
+        <Route path="/inventory" element={<Inventory />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </div>
   );
 }
@@ -62,10 +57,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" storageKey="delivery-route-theme">
-        <AuthProvider>
-          <AppContent />
-          <Toaster />
-        </AuthProvider>
+        <AppContent />
+        <Toaster />
       </ThemeProvider>
     </QueryClientProvider>
   );

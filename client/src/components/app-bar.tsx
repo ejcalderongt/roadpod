@@ -1,4 +1,4 @@
-import { useLocation } from "wouter";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
 import { useAuth } from "@/contexts/auth-context";
@@ -25,13 +25,13 @@ export function AppBar({
   className = "bg-primary",
   actions,
 }: AppBarProps) {
-  const [location, setLocation] = useLocation();
+  const navigate = useNavigate(); // <-- aquí el cambio
   const { toggleTheme } = useTheme();
   const { user, routeInfo, logout } = useAuth();
 
   const handleBack = () => {
     if (typeof showBack === "string") {
-      setLocation(showBack);
+      navigate(showBack);
     } else {
       window.history.back();
     }
@@ -39,7 +39,7 @@ export function AppBar({
 
   const handleLogout = async () => {
     await logout();
-    setLocation("/");
+    navigate("/");
   };
 
   return (

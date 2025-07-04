@@ -37,7 +37,7 @@ interface OrderDetail {
 
 export function OrderDetail() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const [, navigate] = useLocation(); // ✅ corrección aplicada
   const { toast } = useToast();
 
   const { data: order, isLoading } = useQuery<OrderDetail>({
@@ -83,13 +83,12 @@ export function OrderDetail() {
     },
   });
 
-  const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat('es-CO', {
+  const formatCurrency = (amount: string) =>
+    new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
       minimumFractionDigits: 0,
     }).format(parseFloat(amount));
-  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -133,7 +132,6 @@ export function OrderDetail() {
   return (
     <div className="min-h-screen bg-background">
       <StatusBar />
-      
       <AppBar 
         title={`Pedido ${order.orderNumber}`}
         subtitle={order.customer.name}
@@ -142,7 +140,6 @@ export function OrderDetail() {
       />
 
       <div className="p-4 pb-20">
-        {/* Customer Info Card */}
         <Card className="mb-4">
           <CardContent className="p-4">
             <div className="flex items-start justify-between mb-3">
@@ -152,7 +149,7 @@ export function OrderDetail() {
               </div>
               {getStatusBadge(order.status)}
             </div>
-            
+
             <div className="space-y-2 text-sm">
               <div className="flex items-center space-x-2">
                 <span className="material-icons text-muted-foreground text-sm">location_on</span>
@@ -175,7 +172,7 @@ export function OrderDetail() {
                 <span>Crédito: 30 días</span>
               </div>
             </div>
-            
+
             <div className="flex space-x-2 mt-4">
               <Button className="flex-1" variant="outline">
                 <span className="material-icons text-sm mr-2">map</span>
@@ -189,7 +186,6 @@ export function OrderDetail() {
           </CardContent>
         </Card>
 
-        {/* Order Summary */}
         <Card className="mb-4">
           <CardHeader>
             <CardTitle>Resumen del Pedido</CardTitle>
@@ -216,7 +212,6 @@ export function OrderDetail() {
           </CardContent>
         </Card>
 
-        {/* Products List */}
         <Card className="mb-4">
           <CardHeader>
             <CardTitle>Productos del Pedido</CardTitle>
@@ -254,7 +249,6 @@ export function OrderDetail() {
           </CardContent>
         </Card>
 
-        {/* Action Buttons */}
         {order.status === "pending" && (
           <div className="space-y-3">
             <Button 
@@ -265,7 +259,7 @@ export function OrderDetail() {
               <span className="material-icons mr-3">local_shipping</span>
               Iniciar Entrega
             </Button>
-            
+
             <div className="grid grid-cols-2 gap-3">
               <Button 
                 variant="secondary"
